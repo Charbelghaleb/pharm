@@ -16,12 +16,26 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
-  const supabase = createClient()
+
+  function getSupabase() {
+    try {
+      return createClient()
+    } catch {
+      return null
+    }
+  }
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError(null)
+
+    const supabase = getSupabase()
+    if (!supabase) {
+      setError('Supabase is not configured. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY environment variables.')
+      setLoading(false)
+      return
+    }
 
     // Create auth user
     const { data: authData, error: authError } = await supabase.auth.signUp({

@@ -23,7 +23,14 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
-  const supabase = createClient()
+
+  function getSupabase() {
+    try {
+      return createClient()
+    } catch {
+      return null
+    }
+  }
 
   const form = useForm<PharmacyOnboardingData>({
     resolver: zodResolver(pharmacyOnboardingSchema),
@@ -43,6 +50,13 @@ export default function OnboardingPage() {
   async function onSubmit(data: PharmacyOnboardingData) {
     setLoading(true)
     setError(null)
+
+    const supabase = getSupabase()
+    if (!supabase) {
+      setError('Supabase is not configured. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY environment variables.')
+      setLoading(false)
+      return
+    }
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {

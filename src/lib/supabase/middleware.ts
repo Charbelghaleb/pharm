@@ -2,11 +2,32 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function updateSession(request: NextRequest) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  // If Supabase is not configured, allow auth pages to render
+  // but redirect everything else to login
+  if (!supabaseUrl || !supabaseAnonKey) {
+    const isAuthPage =
+      request.nextUrl.pathname.startsWith('/login') ||
+      request.nextUrl.pathname.startsWith('/signup') ||
+      request.nextUrl.pathname.startsWith('/auth') ||
+      request.nextUrl.pathname.startsWith('/onboarding')
+
+    if (isAuthPage) {
+      return NextResponse.next()
+    }
+
+    const url = request.nextUrl.clone()
+    url.pathname = '/login'
+    return NextResponse.redirect(url)
+  }
+
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseAnonKey,
     {
       cookies: {
         getAll() {
@@ -32,7 +53,8 @@ export async function updateSession(request: NextRequest) {
   // Redirect unauthenticated users to login (except auth pages)
   const isAuthPage = request.nextUrl.pathname.startsWith('/login') ||
     request.nextUrl.pathname.startsWith('/signup') ||
-    request.nextUrl.pathname.startsWith('/auth')
+    request.nextUrl.pathname.startsWith('/auth') ||
+    request.nextUrl.pathname.startsWith('/onboarding')
 
   if (!user && !isAuthPage) {
     const url = request.nextUrl.clone()

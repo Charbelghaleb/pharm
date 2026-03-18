@@ -16,12 +16,26 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [magicLinkSent, setMagicLinkSent] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
+
+  function getSupabase() {
+    try {
+      return createClient()
+    } catch {
+      return null
+    }
+  }
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError(null)
+
+    const supabase = getSupabase()
+    if (!supabase) {
+      setError('Supabase is not configured. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY environment variables.')
+      setLoading(false)
+      return
+    }
 
     const { error } = await supabase.auth.signInWithPassword({ email, password })
 
@@ -38,6 +52,13 @@ export default function LoginPage() {
   async function handleMagicLink() {
     setLoading(true)
     setError(null)
+
+    const supabase = getSupabase()
+    if (!supabase) {
+      setError('Supabase is not configured. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY environment variables.')
+      setLoading(false)
+      return
+    }
 
     const { error } = await supabase.auth.signInWithOtp({
       email,
